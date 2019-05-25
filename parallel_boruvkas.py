@@ -4,7 +4,7 @@ from networkx.utils import UnionFind, not_implemented_for
 from threading import Thread
 from multiprocessing import Process
 from multiprocessing.pool import Pool
-pool = Pool(processes=500)
+#pool = Pool(processes=100)
 
 @not_implemented_for('multigraph')
 def boruvka_mst_edges(G, minimum=True, weight='weight',
@@ -67,11 +67,11 @@ def boruvka_mst_edges(G, minimum=True, weight='weight',
     best_edges = []
     for component in forest.to_sets():
         #best_edges.append(best_edge(component))
-        async_result = pool.apply_async(best_edge_list, (component, best_edges))
-        best_edges.append(async_result.get())
+        #async_result = pool.apply_async(best_edge_list, (component, best_edges))
+        #best_edges.append(async_result.get())
 
-        #process = Process(target=best_edge_list, args=[component, best_edges])
-        #process.start()
+        process = Thread(target=best_edge_list, args=[component, best_edges])
+        process.start()
         #processes.append(process)
 
     #for process in processes:
@@ -109,10 +109,10 @@ def boruvka_mst_edges(G, minimum=True, weight='weight',
         for component in forest.to_sets():
             #best_edges_a.append(best_edge(component))
             #best_edge_list(component, best_edges_a)
-            async_result = pool.apply_async(best_edge_list, (component,best_edges_a))
-            best_edges_a.append(async_result.get())
-            #process = Process(target = best_edge_list, args = [component, best_edges_a])
-            #process.start()
+            #async_result = pool.apply_async(best_edge_list, (component,best_edges_a))
+            #best_edges_a.append(async_result.get())
+            process = Thread(target = best_edge_list, args = [component, best_edges_a])
+            process.start()
             #processes.append(process)
 
         #processB = Thread(target=scrapeCrossNexus, args=[clue])
