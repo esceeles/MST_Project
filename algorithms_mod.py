@@ -1,185 +1,295 @@
-# -*- coding: utf-8 -*-
-#    Copyright (C) 2017 NetworkX Developers
-#    Aric Hagberg <hagberg@lanl.gov>
-#    Dan Schult <dschult@colgate.edu>
-#    Pieter Swart <swart@lanl.gov>
-#    Loïc Séguin-C. <loicseguin@gmail.com>
-#    All rights reserved.
-#    BSD license.
-"""
-Algorithms for calculating min/max spanning trees/forests.
-
-"""
-from itertools import count
-from math import isnan
-
-import networkx as nx
-from networkx.utils import UnionFind, not_implemented_for
-
-__all__ = [
-    'minimum_spanning_edges',
-    'minimum_spanning_tree',
-]
-
-def cmp_lt(x, y):
-    # Use __lt__ if available; otherwise, try __le__.
-    # In Py3.x, only __lt__ will be called.
-    return (x < y) if hasattr(x, '__lt__') else (not y <= x)
-
-def _siftdown(heap, startpos, pos):
-    newitem = heap[pos]
-    # Follow the path to the root, moving parents down until finding a place
-    # newitem fits.
-    while pos > startpos:
-        parentpos = (pos - 1) >> 1
-        parent = heap[parentpos]
-        if cmp_lt(newitem, parent):
-            heap[pos] = parent
-            pos = parentpos
-            continue
-        break
-    heap[pos] = newitem
-
-def _siftup(heap, pos):
-    endpos = len(heap)
-    startpos = pos
-    newitem = heap[pos]
-    # Bubble up the smaller child until hitting a leaf.
-    childpos = 2*pos + 1    # leftmost child position
-    while childpos < endpos:
-        # Set childpos to index of smaller child.
-        rightpos = childpos + 1
-        if rightpos < endpos and not cmp_lt(heap[childpos], heap[rightpos]):
-            childpos = rightpos
-        # Move the smaller child up.
-        heap[pos] = heap[childpos]
-        pos = childpos
-        childpos = 2*pos + 1
-    # The leaf at pos is empty now.  Put newitem there, and bubble it up
-    # to its final resting place (by sifting its parents down).
-    heap[pos] = newitem
-    _siftdown(heap, startpos, pos)
-
-def heappush(heap, item):
-    """Push item onto heap, maintaining the heap invariant."""
-    heap.append(item)
-    _siftdown(heap, 0, len(heap)-1)
-
-def heappop(heap):
-    """Pop the smallest item off the heap, maintaining the heap invariant."""
-    lastelt = heap.pop()    # raises appropriate IndexError if heap is empty
-    if heap:
-        returnitem = heap[0]
-        heap[0] = lastelt
-        _siftup(heap, 0)
-    else:
-        returnitem = lastelt
-    return returnitem
+from collections import defaultdict
 
 
+# Class to represent a graph
+class Graph:
 
+    def __init__(self, vertices):
+        self.V = vertices  # No. of vertices
+        self.graph = []  # default dictionary
+        # to store graph
 
+    # function to add an edge to graph
+    def addEdge(self, u, v, w):
+        self.graph.append([u, v, w])
 
+        # A utility function to find set of an element i
 
+    # (uses path compression technique)
+    def find(self, parent, i):
+        if parent[i] == i:
+            return i
+        return self.find(parent, parent[i])
 
-def prim_mst_edges(G, minimum, weight='weight',
-                   keys=True, data=True, ignore_nan=False):
+        # A function that does union of two sets of x and y
 
-    is_multigraph = G.is_multigraph()
-    push = heappush
-    pop = heappop
+    # (uses union by rank)
+    def union(self, parent, rank, x, y):
+        xroot = self.find(parent, x)
+        yroot = self.find(parent, y)
 
-    nodes = list(G)
-    c = count()
+        # Attach smaller rank tree under root of  
+        # high rank tree (Union by Rank) 
+        if rank[xroot] < rank[yroot]:
+            parent[xroot] = yroot
+        elif rank[xroot] > rank[yroot]:
+            parent[yroot] = xroot
 
-    sign = 1 if minimum else -1
-
-    while nodes:
-        u = nodes.pop(0)
-        frontier = []
-        visited = [u]
-
-        if is_multigraph:
-            for v, keydict in G.adj[u].items():
-                for k, d in keydict.items():
-                    wt = d.get(weight, 1) * sign
-                    if isnan(wt):
-                        if ignore_nan:
-                            continue
-                        msg = "NaN found as an edge weight. Edge %s"
-                        raise ValueError(msg % ((u, v, k, d),))
-                    push(frontier, (wt, next(c), u, v, k, d))
+            # If ranks are same, then make one as root
+        # and increment its rank by one 
         else:
-            for v, d in G.adj[u].items():
-                wt = d.get(weight, 1) * sign
-                if isnan(wt):
-                    if ignore_nan:
-                        continue
-                    msg = "NaN found as an edge weight. Edge %s"
-                    raise ValueError(msg % ((u, v, d),))
-                push(frontier, (wt, next(c), u, v, d))
-        while frontier:
-            if is_multigraph:
-                W, _, u, v, k, d = pop(frontier)
-            else:
-                W, _, u, v, d = pop(frontier)
-            if v in visited:
-                continue
-            # Multigraphs need to handle edge keys in addition to edge data.
-            if is_multigraph and keys:
-                if data:
-                    yield u, v, k, d
-                else:
-                    yield u, v, k
-            else:
-                if data:
-                    yield u, v, d
-                else:
-                    yield u, v
-            # update frontier
-            visited.append(v)
-            nodes.remove(v)
-            if is_multigraph:
-                for w, keydict in G.adj[v].items():
-                    if w in visited:
-                        continue
-                    for k2, d2 in keydict.items():
-                        new_weight = d2.get(weight, 1) * sign
-                        push(frontier, (new_weight, next(c), v, w, k2, d2))
-            else:
-                for w, d2 in G.adj[v].items():
-                    if w in visited:
-                        continue
-                    new_weight = d2.get(weight, 1) * sign
-                    push(frontier, (new_weight, next(c), v, w, d2))
+            parent[yroot] = xroot
+            rank[xroot] += 1
+
+    # The main function to construct MST using Kruskal's  
+    # algorithm
+    def KruskalMST(self):
+
+        result = []  # This will store the resultant MST
+
+        i = 0  # An index variable, used for sorted edges
+        e = 0  # An index variable, used for result[]
+
+        # Step 1:  Sort all the edges in non-decreasing
+        # order of their
+        # weight.  If we are not allowed to change the
+        # given graph, we can create a copy of graph
+        self.graph = sorted(self.graph, key=lambda item: item[2])
+
+        parent = []
+        rank = []
+
+        # Create V subsets with single elements 
+        for node in range(self.V):
+            parent.append(node)
+            rank.append(0)
+
+            # Number of edges to be taken is equal to V-1
+
+        while e < (self.V - 1):
+
+            # Step 2: Pick the smallest edge and increment  
+            # the index for next iteration
+            u, v, w = self.graph[i]
+            i = i + 1
+            x = self.find(parent, u)
+            y = self.find(parent, v)
+
+            # If including this edge does't cause cycle,  
+            # include it in result and increment the index
+            # of result for next edge
+            if x != y:
+                e = e + 1
+                result.append([u, v, w])
+                self.union(parent, rank, x, y)
+                # Else discard the edge
+
+        # print the contents of result[] to display the built MST 
+        #print("Following are the edges in the constructed MST")
+        #for u, v, weight in result:
+            #print str(u) + " -- " + str(v) + " == " + str(weight)
+            #print("%d -- %d == %d" % (u, v, weight))
+        return result
 
 
-ALGORITHMS = {
-    'prim': prim_mst_edges
-}
+class Heap():
+
+    def __init__(self):
+        self.array = []
+        self.size = 0
+        self.pos = []
+
+    def newMinHeapNode(self, v, dist):
+        minHeapNode = [v, dist]
+        return minHeapNode
+
+        # A utility function to swap two nodes of
+
+    # min heap. Needed for min heapify
+    def swapMinHeapNode(self, a, b):
+        t = self.array[a]
+        self.array[int(a)] = self.array[int(b)]
+        self.array[b] = t
+
+        # A standard function to heapify at given idx
+
+    # This function also updates position of nodes
+    # when they are swapped. Position is needed
+    # for decreaseKey()
+    def minHeapify(self, idx):
+        smallest = idx
+        left = 2 * idx + 1
+        right = 2 * idx + 2
+
+        if left < self.size and self.array[left][1] < \
+                self.array[smallest][1]:
+            smallest = left
+
+        if right < self.size and self.array[right][1] < \
+                self.array[smallest][1]:
+            smallest = right
+
+            # The nodes to be swapped in min heap
+        # if idx is not smallest
+        if smallest != idx:
+            # Swap positions
+            self.pos[self.array[smallest][0]] = idx
+            self.pos[self.array[idx][0]] = smallest
+
+            # Swap nodes
+            self.swapMinHeapNode(smallest, idx)
+
+            self.minHeapify(smallest)
+
+            # Standard function to extract minimum node from heap
+
+    def extractMin(self):
+
+        # Return NULL wif heap is empty
+        if self.isEmpty() == True:
+            return
+
+        # Store the root node
+        root = self.array[0]
+
+        # Replace root node with last node
+        lastNode = self.array[self.size - 1]
+        self.array[0] = lastNode
+
+        # Update position of last node
+        self.pos[lastNode[0]] = 0
+        self.pos[root[0]] = self.size - 1
+
+        # Reduce heap size and heapify root
+        self.size -= 1
+        self.minHeapify(0)
+
+        return root
+
+    def isEmpty(self):
+        return True if self.size == 0 else False
+
+    def decreaseKey(self, v, dist):
+
+        # Get the index of v in  heap array
+
+        i = self.pos[v]
+        i = int(i)
+        # Get the node and update its dist value
+        self.array[i][1] = dist
+
+        # Travel up while the complete tree is not
+        # hepified. This is a O(Logn) loop
+
+        while i > 0 and self.array[i][1] < \
+                self.array[int((i - 1) / 2)][1]:
+            # Swap this node with its parent
+            parentpos = int((i-1)/2)
+            self.pos[self.array[i][0]] = (i - 1) / 2
+            self.pos[self.array[parentpos][0]] = i
+
+            self.swapMinHeapNode(i, parentpos)
+
+            # move to parent index
+            i = parentpos;
+
+            # A utility function to check if a given vertex
+
+    # 'v' is in min heap or not
+    def isInMinHeap(self, v):
+
+        if self.pos[v] < self.size:
+            return True
+        return False
 
 
-@not_implemented_for('directed')
-def minimum_spanning_edges(G, algorithm='kruskal', weight='weight',
-                           keys=True, data=True, ignore_nan=False):
-
-    try:
-        algo = ALGORITHMS[algorithm]
-    except KeyError:
-        msg = '{} is not a valid choice for an algorithm.'.format(algorithm)
-        raise ValueError(msg)
-
-    return algo(G, minimum=True, weight=weight, keys=keys, data=data,
-                ignore_nan=ignore_nan)
+def printArr(parent, n):
+    result = []
+    for i in range(1, n):
+        #print("% d - % d" % (parent[i], i))
+        result.append((parent[i], i))
+    return result
 
 
-def minimum_spanning_tree(G, weight='weight', algorithm='kruskal',
-                          ignore_nan=False):
+class GraphB():
 
-    edges = minimum_spanning_edges(G, algorithm, weight, keys=True,
-                                   data=True, ignore_nan=ignore_nan)
-    T = G.__class__()  # Same graph class as G
-    T.graph.update(G.graph)
-    T.add_nodes_from(G.nodes.items())
-    T.add_edges_from(edges)
-    return T
+    def __init__(self, V):
+        self.V = V
+        self.graph = defaultdict(list)
+
+        # Adds an edge to an undirected graph
+
+    def addEdge(self, src, dest, weight):
+        # Add an edge from src to dest.  A new node is
+        # added to the adjacency list of src. The node
+        # is added at the begining. The first element of
+        # the node has the destination and the second
+        # elements has the weight
+        newNode = [dest, weight]
+        self.graph[src].insert(0, newNode)
+
+        # Since graph is undirected, add an edge from
+        # dest to src also
+        newNode = [src, weight]
+        self.graph[dest].insert(0, newNode)
+
+        # The main function that prints the Minimum
+    # Spanning Tree(MST) using the Prim's Algorithm.
+    # It is a O(ELogV) function
+
+    def PrimMST(self):
+        # Get the number of vertices in graph
+        V = self.V
+
+        # key values used to pick minimum weight edge in cut
+        key = []
+
+        # List to store contructed MST
+        parent = []
+
+        # minHeap represents set E
+        minHeap = Heap()
+
+        # Initialize min heap with all vertices. Key values of all
+        # vertices (except the 0th vertex) is is initially infinite
+        for v in range(V):
+            parent.append(-1)
+            key.append(10000000000)
+            minHeap.array.append(minHeap.newMinHeapNode(v, key[v]))
+            minHeap.pos.append(v)
+
+            # Make key value of 0th vertex as 0 so
+        # that it is extracted first
+        minHeap.pos[0] = 0
+        key[0] = 0
+        minHeap.decreaseKey(0, key[0])
+
+        # Initially size of min heap is equal to V
+        minHeap.size = V;
+
+        # In the following loop, min heap contains all nodes
+        # not yet added in the MST.
+        while minHeap.isEmpty() == False:
+
+            # Extract the vertex with minimum distance value
+            newHeapNode = minHeap.extractMin()
+            u = newHeapNode[0]
+
+            # Traverse through all adjacent vertices of u
+            # (the extracted vertex) and update their
+            # distance values
+            for pCrawl in self.graph[u]:
+
+                v = pCrawl[0]
+
+                # If shortest distance to v is not finalized
+                # yet, and distance to v through u is less than
+                # its previously calculated distance
+                if minHeap.isInMinHeap(v) and pCrawl[1] < key[v]:
+                    key[v] = pCrawl[1]
+                    parent[v] = u
+
+                    # update distance value in min heap also
+                    minHeap.decreaseKey(v, key[v])
+
+        printArr(parent, V)

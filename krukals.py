@@ -1,7 +1,7 @@
 from operator import itemgetter
 from math import isnan
 
-from networkx.utils import UnionFind, not_implemented_for
+#from networkx.utils import UnionFind
 
 def kruskal_mst_edges(G, minimum, weight='weight',
                       keys=True, data=True, ignore_nan=False):

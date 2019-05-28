@@ -14,11 +14,148 @@ from heapq import heappop, heappush
 from operator import itemgetter
 from itertools import count
 from networkx.utils import UnionFind
+import networkx as nx
 
 __all__ = [
     'minimum_spanning_edges',
     'minimum_spanning_tree',
 ]
+
+from threading import Thread
+
+def boruvka_threads(G, minimum=True, weight='weight',
+                      keys=False, data=True, ignore_nan=False):
+
+    forest = UnionFind(G)
+
+    def best_edge(component):
+        sign = 1 if minimum else -1
+        minwt = float('inf')
+        boundary = None
+        for e in nx.edge_boundary(G, component, data=True):
+            wt = e[-1].get(weight, 1) * sign
+            if wt < minwt:
+                minwt = wt
+                boundary = e
+        return boundary
+
+    def best_edge_list(component, edgelist):
+        sign = 1 if minimum else -1
+        minwt = float('inf')
+        boundary = None
+        for e in nx.edge_boundary(G, component, data=True):
+            wt = e[-1].get(weight, 1) * sign
+            if wt < minwt:
+                minwt = wt
+                boundary = e
+        edgelist.append(boundary)
+
+    #best_edges = (best_edge(component) for component in forest.to_sets())
+
+    #processes = []
+    best_edges = []
+    for component in forest.to_sets():
+        #best_edges.append(best_edge(component))
+        #async_result = pool.apply_async(best_edge_list, (component, best_edges))
+        #best_edges.append(async_result.get())
+        process = Thread(target=best_edge_list, args=[component, best_edges])
+        process.start()
+        #processes.append(process)
+
+    #for process in processes:
+        #process.join()
+
+    best_edges = [edge for edge in best_edges if edge is not None]
+
+    while best_edges:
+
+        #best_edges = (best_edge(component) for component in forest.to_sets())
+
+        #processes = []
+
+        best_edges_a = []
+        threads = []
+        for component in forest.to_sets():
+            #best_edges_a.append(best_edge(component))
+            #best_edge_list(component, best_edges_a)
+            #async_result = pool.apply_async(best_edge_list, (component,best_edges_a))
+            #best_edges_a.append(async_result.get())
+            process = Thread(target = best_edge_list, args = [component, best_edges_a])
+            process.start()
+            #processes.append(process)
+
+        #for process in processes:
+            #process.join()
+
+        best_edges = [edge for edge in best_edges_a if edge is not None]
+
+        for u, v, d in best_edges:
+            if forest[u] != forest[v]:
+                if data:
+                    yield u, v, d
+                else:
+                    yield u, v
+                forest.union(u, v)
+
+def boruvka_mst_edges(G, minimum=True, weight='weight',
+                      keys=False, data=True, ignore_nan=False):
+
+    forest = UnionFind(G)
+
+    def best_edge(component):
+        sign = 1 if minimum else -1
+        minwt = float('inf')
+        boundary = None
+        for e in nx.edge_boundary(G, component, data=True):
+            wt = e[-1].get(weight, 1) * sign
+            if wt < minwt:
+                minwt = wt
+                boundary = e
+        return boundary
+
+    best_edges = (best_edge(component) for component in forest.to_sets())
+
+    best_edges = [edge for edge in best_edges if edge is not None]
+
+    while best_edges:
+
+        best_edges = (best_edge(component) for component in forest.to_sets())
+
+        best_edges = [edge for edge in best_edges if edge is not None]
+
+        for u, v, d in best_edges:
+            if forest[u] != forest[v]:
+                if data:
+                    yield u, v, d
+                else:
+                    yield u, v
+                forest.union(u, v)
+
+
+def MakeSet(x):
+    x.parent = x
+    x.rank = 0
+
+def Union(x, y):
+    xRoot = Find(x)
+    yRoot = Find(y)
+    if xRoot.rank > yRoot.rank:
+        yRoot.parent = xRoot
+    elif xRoot.rank < yRoot.rank:
+        xRoot.parent = yRoot
+    elif xRoot != yRoot:  # Unless x and y are already in same set, merge them
+        yRoot.parent = xRoot
+        xRoot.rank = xRoot.rank + 1
+
+def Find(x):
+    if x.parent == x:
+        return x
+    else:
+        x.parent = Find(x.parent)
+        return x.parent
+
+
+
 
 def kruskal_mst_edges(G, minimum, weight='weight', data=True):
 
@@ -32,7 +169,6 @@ def kruskal_mst_edges(G, minimum, weight='weight', data=True):
             wt = d.get(weight, 1) * sign
             yield wt, u, v, d
     edges = sorted(filter_nan_edges(), key=itemgetter(0))
-    # Multigraphs need to handle edge keys in addition to edge data.
     for wt, u, v, d in edges:
         if subtrees[u] != subtrees[v]:
             if data:
@@ -44,7 +180,6 @@ def kruskal_mst_edges(G, minimum, weight='weight', data=True):
 
 
 def prim_mst_edges(G, minimum, weight='weight', data=True):
-
 
     push = heappush
     pop = heappop
@@ -67,7 +202,6 @@ def prim_mst_edges(G, minimum, weight='weight', data=True):
             W, _, u, v, d = pop(frontier)
             if v in visited:
                 continue
-            # Multigraphs need to handle edge keys in addition to edge data.
             if data:
                 yield u, v, d
             else:
@@ -84,7 +218,9 @@ def prim_mst_edges(G, minimum, weight='weight', data=True):
 
 ALGORITHMS = {
     'prim': prim_mst_edges,
-    'kruskal': kruskal_mst_edges
+    'kruskal': kruskal_mst_edges,
+    'boruvka':boruvka_mst_edges,
+    'parallel': boruvka_threads
 }
 
 def minimum_spanning_edges(G, algorithm, weight='weight', data=True):
