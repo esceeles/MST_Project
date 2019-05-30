@@ -45,9 +45,9 @@ def generateRandomConnectedGraph(self, V):
     return vertices, edges
 
 if __name__ == "__main__":
-    nodes = 10000
-    edges = nodes * 20
-    file_name = "d_"+ str(nodes)+ "_n_" + str(edges)+"_e"
+    nodes = 30000
+    edges = nodes * 5
+    file_name = "m_"+ str(nodes)+ "_n_" + str(edges)+"_e"
     f= open(str(file_name +".txt"),"w+")
 
     f.write(str(nodes) + '\n')
@@ -56,8 +56,9 @@ if __name__ == "__main__":
     x = generateRandomConnectedGraph(nodes, nodes)                 #generates random graph with n nodes and n-1 edges
 
     import algorithms_mod as am
+
     g = am.Graph(nodes)
-    edgeDict = {}
+
     for (w, u, v) in x[1]:
         g.addEdge(u, v, w)
 

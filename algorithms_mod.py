@@ -47,8 +47,8 @@ class Graph:
 
 
     def BoruvkaMST(self):
-        parent = [];
-        rank = [];
+        parent = []
+        rank = []
 
         # An array to store index of the cheapest edge of
         # subset. It store [u,v,w] for each component
@@ -289,7 +289,7 @@ class Heap():
 def printArr(parent, n):
     result = []
     for i in range(1, n):
-        print("% d - % d" % (parent[i], i))
+        #print("% d - % d" % (parent[i], i))
         result.append((parent[i], i))
     return result
 

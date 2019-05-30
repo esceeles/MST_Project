@@ -15,6 +15,7 @@ import algorithms_mod as am
 
 
 gc.disable()
+"""
 filename = "text_gen.txt"
 f= open(filename)
 nodes = int(f.readline())
@@ -32,98 +33,70 @@ for i in range(edges):
     g.addEdge(int(u), int(v), int(w))
     h.addEdge(int(u), int(v), int(w))
 
-
-x = timeit.timeit(h.PrimMST, number = 1)
-print(x)
-y = timeit.timeit(g.KruskalMST, number = 1)
-print(y)
-
 """
-filename = "graphs\dense 1000 nodes n^2 edges.txt"
-f= open(filename)
-nodes = int(f.readline())
-print(nodes)
-edges = int(f.readline())
-print(edges)
-
-g = am.Graph(nodes)
-h = am.GraphB(nodes)
-
-for i in range(edges):
-    data = f.readline()
-    u, v, w = data.split(',')
-    print(u, v, w)
-    g.addEdge(int(u), int(v), int(w))
-    h.addEdge(int(u), int(v), int(w))
-
-
-print("Making first MSTs...")
+from randomGraph import generateRandomConnectedGraph
 
 prim_time = []
-kruskal_time = []
-boruvka_time = []
+krus_time = []
+bor_time = []
+for i in range(100, 150, 10):
+    nodes = i
+    edges = i**2
 
-for i in range(0, 5):
-    # Prim
-    wrapped = time_wrapper(h.PrimMST())
-    prim_time.append(timeit.timeit(wrapped, number=1))
-    print(prim_time[-1])
+    x = generateRandomConnectedGraph(nodes, nodes)
+    k = am.Graph(nodes)
+    p = am.GraphB(nodes)
 
-    # Kruskal
-    wrapped = time_wrapper(g.KruskalMST())
-    kruskal_time.append(timeit.timeit(wrapped, number=1))
-    print(kruskal_time[-1])
+    for (w, u, v) in x[1]:
+        k.addEdge(u, v, w)
+        p.addEdge(u, v, w)
 
-data1, data2 = prim_time, kruskal_time
+    ex_edges = edges - (nodes-1)            #determines how many extra edges we'll need to meet our goal
+
+    for i in range(ex_edges):             #adds random edges to graph
+        u = random.randint(0, nodes-1)      #picks a random node for src
+        v = random.randint(0, nodes-1)      #picks a random node for dest
+        w = random.randint(0, 100)             #gets a random weight
+        k.addEdge(u, v, w)                  #updates g and h
+        p.addEdge(u, v, w)
+
+    x = timeit.timeit(p.PrimMST, number = 1)
+    prim_time.append(x)
+    print("prim: ", x)
+    y = timeit.timeit(k.KruskalMST, number = 1)
+    krus_time.append(y)
+    print("krus: ", y)
+    z = timeit.timeit(k.BoruvkaMST, number=1)
+    bor_time.append(z)
+    print("bor: ", z)
+
+
+data1, data2 = prim_time, krus_time
 stat, p = ttest_ind(data1, data2)
 print("ttest: ", stat, " ", p)
 
 stat, p = f_oneway(data1, data2)
 print("Anova: ", stat, " ", p)
 
+from scipy.stats import describe
+
+print("Prim: ", describe(prim_time))
+print("Kruskal: ", describe(krus_time))
+print("Boruvka: ", describe(bor_time))
 
 plot(prim_time, color = 'blue')
-plot(kruskal_time, color = 'green')
+plot(krus_time, color = 'green')
+plot(bor_time, color = 'yellow')
 
 show()
 
-"""
 
 """
-print(h)
-
-x = alg.minimum_spanning_tree(G, algorithm='prim')
-print(x.edges())
-
-
-prim_time = []
-kruskal_time = []
-
 file_name = str("final_algs")
 f= open(str(file_name +".txt"),"w+")
 
 test = "Small, Sparse Graphs"
 f.write(test)
-
-for nodes in range(10, 1000, 10):
-    edges = nodes
-    print("nodes: ", nodes, ". edges: ", edges)
-    #Graph Creation
-    G = nx.gnm_random_graph(nodes, edges, seed=None, directed=False)
-
-    for (u, v) in G.edges():
-        G.edges[u,v]['weight'] = random.randint(1,1000)
-
-    # Prim
-    wrapped = time_wrapper(alg.minimum_spanning_tree, G, algorithm='prim')
-    prim_time.append(timeit.timeit(wrapped, number=1))
-    print("Prim: ", prim_time[-1])
-
-    #Kruskal
-    wrapped = time_wrapper(alg.minimum_spanning_tree, G, algorithm='kruskal')
-    kruskal_time.append(timeit.timeit(wrapped, number =1))
-    print("Kruskal: ", kruskal_time[-1])
-
 
 data1, data2 = prim_time, kruskal_time
 stat, p = ttest_ind(data1, data2)
@@ -146,14 +119,12 @@ f.write("\nKruskal time: ")
 for i in kruskal_time:
     f.write(str(i)+ ", ")
 
-
 f.write('\n')
 
 plot(prim_time, color = 'blue')
 plot(kruskal_time, color = 'green')
 
 savefig(str(test+"_a.png"))
-
 
 prim_time.clear()
 kruskal_time.clear()
