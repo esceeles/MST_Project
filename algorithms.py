@@ -50,42 +50,20 @@ def boruvka_threads(G, minimum=True, weight='weight',
                 boundary = e
         edgelist.append(boundary)
 
-    #best_edges = (best_edge(component) for component in forest.to_sets())
-
-    #processes = []
     best_edges = []
     for component in forest.to_sets():
-        #best_edges.append(best_edge(component))
-        #async_result = pool.apply_async(best_edge_list, (component, best_edges))
-        #best_edges.append(async_result.get())
+
         process = Thread(target=best_edge_list, args=[component, best_edges])
         process.start()
-        #processes.append(process)
-
-    #for process in processes:
-        #process.join()
 
     best_edges = [edge for edge in best_edges if edge is not None]
 
     while best_edges:
 
-        #best_edges = (best_edge(component) for component in forest.to_sets())
-
-        #processes = []
-
         best_edges_a = []
-        threads = []
         for component in forest.to_sets():
-            #best_edges_a.append(best_edge(component))
-            #best_edge_list(component, best_edges_a)
-            #async_result = pool.apply_async(best_edge_list, (component,best_edges_a))
-            #best_edges_a.append(async_result.get())
             process = Thread(target = best_edge_list, args = [component, best_edges_a])
             process.start()
-            #processes.append(process)
-
-        #for process in processes:
-            #process.join()
 
         best_edges = [edge for edge in best_edges_a if edge is not None]
 
@@ -97,8 +75,7 @@ def boruvka_threads(G, minimum=True, weight='weight',
                     yield u, v
                 forest.union(u, v)
 
-def boruvka_mst_edges(G, minimum=True, weight='weight',
-                      keys=False, data=True, ignore_nan=False):
+def boruvka_mst_edges(G, minimum=True, weight='weight', keys=False, data=True, ignore_nan=False):
 
     forest = UnionFind(G)
 
@@ -181,30 +158,39 @@ def kruskal_mst_edges(G, minimum, weight='weight', data=True):
 
 def prim_mst_edges(G, minimum, weight='weight', data=True):
 
-    push = heappush
+    push = heappush         #allows us to use words push and pop in place of built in heapq algrs: heappush and heappop
     pop = heappop
 
-    nodes = list(G)
+    nodes = list(G)         #add all nodes of G to list, nodes
     c = count()
 
-    sign = 1 if minimum else -1
+    #sign = 1 if minimum else -1
 
     while nodes:
+        print("nodes: ", nodes)
         u = nodes.pop(0)
+        print("u: ", u)
         frontier = []
         visited = [u]
-
+        print("frontier: ", frontier)
+        print("visited: ", visited)
 
         for v, d in G.adj[u].items():
-            wt = d.get(weight, 1) * sign
+            print("v, d: ", v, d)
+            wt = d.get(weight, 1)
+            print(wt)
             push(frontier, (wt, next(c), u, v, d))
+            print("frontier: ", frontier)
         while frontier:
             W, _, u, v, d = pop(frontier)
             if v in visited:
+                print("continuing")
                 continue
             if data:
+                print("data", u, v, d)
                 yield u, v, d
             else:
+                print("else", u, v)
                 yield u, v
             # update frontier
             visited.append(v)
@@ -212,7 +198,7 @@ def prim_mst_edges(G, minimum, weight='weight', data=True):
             for w, d2 in G.adj[v].items():
                 if w in visited:
                     continue
-                new_weight = d2.get(weight, 1) * sign
+                new_weight = d2.get(weight, 1)
                 push(frontier, (new_weight, next(c), v, w, d2))
 
 
@@ -233,6 +219,7 @@ def minimum_spanning_edges(G, algorithm, weight='weight', data=True):
 def minimum_spanning_tree(G, weight='weight', algorithm='kruskal'):
 
     edges = minimum_spanning_edges(G, algorithm, weight, data=True)
+    print("edges: ", edges)
     T = G.__class__()  # Same graph class as G
     T.graph.update(G.graph)
     T.add_nodes_from(G.nodes.items())

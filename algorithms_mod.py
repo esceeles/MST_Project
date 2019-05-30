@@ -1,5 +1,7 @@
 from collections import defaultdict
 
+from collections import defaultdict
+
 
 # Class to represent a graph
 class Graph:
@@ -8,6 +10,7 @@ class Graph:
         self.V = vertices  # No. of vertices
         self.graph = []  # default dictionary
         # to store graph
+        self.boruvkaMST = []
 
     # function to add an edge to graph
     def addEdge(self, u, v, w):
@@ -17,6 +20,7 @@ class Graph:
 
     # (uses path compression technique)
     def find(self, parent, i):
+        #print("in find, i, parent: ", i, parent)
         if parent[i] == i:
             return i
         return self.find(parent, parent[i])
@@ -28,20 +32,91 @@ class Graph:
         xroot = self.find(parent, x)
         yroot = self.find(parent, y)
 
-        # Attach smaller rank tree under root of  
-        # high rank tree (Union by Rank) 
+        # Attach smaller rank tree under root of
+        # high rank tree (Union by Rank)
         if rank[xroot] < rank[yroot]:
             parent[xroot] = yroot
         elif rank[xroot] > rank[yroot]:
             parent[yroot] = xroot
 
             # If ranks are same, then make one as root
-        # and increment its rank by one 
+        # and increment its rank by one
         else:
             parent[yroot] = xroot
             rank[xroot] += 1
 
-    # The main function to construct MST using Kruskal's  
+
+    def BoruvkaMST(self):
+        parent = [];
+        rank = [];
+
+        # An array to store index of the cheapest edge of
+        # subset. It store [u,v,w] for each component
+        cheapest = []
+
+        # Initially there are V different trees.
+        # Finally there will be one tree that will be MST
+        numTrees = self.V
+        MSTweight = 0
+
+        # Create V subsets with single elements
+        for node in range(self.V):
+            parent.append(node)
+            rank.append(0)
+            cheapest = [-1] * self.V
+
+            # Keep combining components (or sets) until all
+        # compnentes are not combined into single MST
+
+        while numTrees > 1:
+
+            # Traverse through all edges and update
+            # cheapest of every component
+            for i in range(len(self.graph)):
+
+                # Find components (or sets) of two corners
+                # of current edge
+                u, v, w = self.graph[i]
+                set1 = self.find(parent, u)
+                set2 = self.find(parent, v)
+
+                # If two corners of current edge belong to
+                # same set, ignore current edge. Else check if
+                # current edge is closer to previous
+                # cheapest edges of set1 and set2
+                if set1 != set2:
+
+                    if cheapest[set1] == -1 or cheapest[set1][2] > w:
+                        cheapest[set1] = [u, v, w]
+
+                    if cheapest[set2] == -1 or cheapest[set2][2] > w:
+                        cheapest[set2] = [u, v, w]
+
+                        # Consider the above picked cheapest edges and add them
+            # to MST
+            for node in range(self.V):
+
+                # Check if cheapest for current set exists
+                if cheapest[node] != -1:
+                    u, v, w = cheapest[node]
+                    set1 = self.find(parent, u)
+                    set2 = self.find(parent, v)
+
+                    if set1 != set2:
+                        MSTweight += w
+                        self.union(parent, rank, set1, set2)
+                        #print("Edge %d-%d with weight %d included in MST" % (u, v, w))
+                        self.boruvkaMST.append([u, v, w])
+                        numTrees = numTrees - 1
+
+            # reset cheapest array
+            cheapest = [-1] * self.V
+
+        #print("Weight of MST is %d" % MSTweight)
+        return self.boruvkaMST
+
+
+    # The main function to construct MST using Kruskal's
     # algorithm
     def KruskalMST(self):
 
@@ -54,42 +129,51 @@ class Graph:
         # order of their
         # weight.  If we are not allowed to change the
         # given graph, we can create a copy of graph
-        self.graph = sorted(self.graph, key=lambda item: item[2])
+        #print("Pre sort graph: ", self.graph)
+        self.graph = sorted(self.graph, key=lambda item: item[2])           #edges are sorted in order by weight, smallest to largest
+        #print("Graph: ", self.graph)
 
-        parent = []
+        parent = [];
         rank = []
 
-        # Create V subsets with single elements 
+        # Create V subsets with single elements
         for node in range(self.V):
-            parent.append(node)
-            rank.append(0)
-
+            parent.append(node)                 #adds each node to parent list
+            rank.append(0)                      #associated rank for each node in parent list
+        #print("parent: ", parent)
+        #print("rank: ", rank)
             # Number of edges to be taken is equal to V-1
-
-        while e < (self.V - 1):
-
-            # Step 2: Pick the smallest edge and increment  
+        while e < self.V - 1:
+            #print("e = ", e)                #e is index for result, i is index for all sorted edges
+            # Step 2: Pick the smallest edge and increment
             # the index for next iteration
-            u, v, w = self.graph[i]
-            i = i + 1
+            #print("i = ", i)
+            u, v, w = self.graph[i]             #gets next smallest weighted edge from graph
+            #print("graph: ", self.graph)
+            #print(u, v, "weight: ", w)
+            i = i + 1                           #increments i so we don't look at this edge again
             x = self.find(parent, u)
             y = self.find(parent, v)
-
-            # If including this edge does't cause cycle,  
+            #print("x, y: ", x, y)           #checks to see that x and y are not already connected by some other edges, checks no cycle
+            # If including this edge does't cause cycle,
             # include it in result and increment the index
             # of result for next edge
             if x != y:
+                #print("no cycle")
                 e = e + 1
                 result.append([u, v, w])
+                #print("result: ", result)
                 self.union(parent, rank, x, y)
                 # Else discard the edge
 
-        # print the contents of result[] to display the built MST 
+            #else:
+                #print("cycle found")
+        # print the contents of result[] to display the built MST
         #print("Following are the edges in the constructed MST")
-        #for u, v, weight in result:
-            #print str(u) + " -- " + str(v) + " == " + str(weight)
-            #print("%d -- %d == %d" % (u, v, weight))
         return result
+        #for u, v, weight in result:
+            # print str(u) + " -- " + str(v) + " == " + str(weight)
+            #print("%d -- %d == %d" % (u, v, weight))
 
 
 class Heap():
@@ -197,7 +281,6 @@ class Heap():
 
     # 'v' is in min heap or not
     def isInMinHeap(self, v):
-
         if self.pos[v] < self.size:
             return True
         return False
@@ -206,7 +289,7 @@ class Heap():
 def printArr(parent, n):
     result = []
     for i in range(1, n):
-        #print("% d - % d" % (parent[i], i))
+        print("% d - % d" % (parent[i], i))
         result.append((parent[i], i))
     return result
 
@@ -225,6 +308,7 @@ class GraphB():
         # is added at the begining. The first element of
         # the node has the destination and the second
         # elements has the weight
+        #self.graph.append([src, dest, weight])
         newNode = [dest, weight]
         self.graph[src].insert(0, newNode)
 
@@ -292,4 +376,6 @@ class GraphB():
                     # update distance value in min heap also
                     minHeap.decreaseKey(v, key[v])
 
-        printArr(parent, V)
+        result = printArr(parent, V)
+        return result
+
