@@ -35,7 +35,7 @@ def generateRandomConnectedGraph(self, V):
 
     while initialSet:
         adjVertex = random.sample(initialSet, 1).pop()
-        edge = (random.randint(1, 100), curVertex, adjVertex)
+        edge = (random.randint(1, 1000), curVertex, adjVertex)
         edges.add(edge)
         initialSet.remove(adjVertex)
         visitedSet.add(adjVertex)
@@ -45,13 +45,13 @@ def generateRandomConnectedGraph(self, V):
 
 if __name__ == "__main__":
 
-    nodes = 30000               #choose nodes
-    density = 1                 #choose density rating
+    nodes = 10000               #choose nodes
+    density = .8                 #choose density rating
     edges = (density * (nodes**2 - nodes))/2        #edges based on density rating
     edges = int(edges)                              #if not int, round down
 
     #writes to file with this naming convention
-    file_name = "large_" + str(nodes) + "_density_"+str(density)
+    file_name = "med_" + str(nodes) + "_density_"+str(density)
     f= open(str(file_name +".txt"),"w+")
 
     f.write(str(nodes) + '\n')                          #writes nodes and edges to file
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         print(i)
         u = random.randint(0, nodes-1)              #can create a multigraph, MST algorithms can handle multigraphs
         v = random.randint(0, nodes-1)
-        w = random.randint(0, 100)
+        w = random.randint(0, 1000)
         f.write(str(u) + "," + str(v) + "," + str(w) + '\n')
 
     f.close()
