@@ -1,4 +1,18 @@
-from collections import defaultdict
+"""
+/***************************************************************************************
+*    Title: Prim's source code
+*    Author: Divyanshu Mehta
+*    Date: 9/27/2018
+*    Title: Boruvka's source code
+*    Date: 8/14/2018
+*    Author: Neelam Yadav
+*    Title: Kruskal's source code
+*    Date: 9/27/2018
+*    Author: Neelam Yadav
+*    Availability for all: geeks4geeks.com
+*
+***************************************************************************************/
+"""
 
 from collections import defaultdict
 
@@ -66,7 +80,7 @@ class Graph:
             cheapest = [-1] * self.V
 
             # Keep combining components (or sets) until all
-        # compnentes are not combined into single MST
+        # components are not combined into single MST
 
         while numTrees > 1:
 
@@ -105,14 +119,12 @@ class Graph:
                     if set1 != set2:
                         MSTweight += w
                         self.union(parent, rank, set1, set2)
-                        #print("Edge %d-%d with weight %d included in MST" % (u, v, w))
                         self.boruvkaMST.append([u, v, w])
                         numTrees = numTrees - 1
 
             # reset cheapest array
             cheapest = [-1] * self.V
 
-        #print("Weight of MST is %d" % MSTweight)
         return self.boruvkaMST
 
 
@@ -129,9 +141,7 @@ class Graph:
         # order of their
         # weight.  If we are not allowed to change the
         # given graph, we can create a copy of graph
-        #print("Pre sort graph: ", self.graph)
         self.graph = sorted(self.graph, key=lambda item: item[2])           #edges are sorted in order by weight, smallest to largest
-        #print("Graph: ", self.graph)
 
         parent = [];
         rank = []
@@ -140,40 +150,24 @@ class Graph:
         for node in range(self.V):
             parent.append(node)                 #adds each node to parent list
             rank.append(0)                      #associated rank for each node in parent list
-        #print("parent: ", parent)
-        #print("rank: ", rank)
             # Number of edges to be taken is equal to V-1
-        while e < self.V - 1:
-            #print("e = ", e)                #e is index for result, i is index for all sorted edges
+        while e < self.V - 1:              #e is index for result, i is index for all sorted edges
             # Step 2: Pick the smallest edge and increment
             # the index for next iteration
-            #print("i = ", i)
             u, v, w = self.graph[i]             #gets next smallest weighted edge from graph
-            #print("graph: ", self.graph)
-            #print(u, v, "weight: ", w)
             i = i + 1                           #increments i so we don't look at this edge again
             x = self.find(parent, u)
-            y = self.find(parent, v)
-            #print("x, y: ", x, y)           #checks to see that x and y are not already connected by some other edges, checks no cycle
+            y = self.find(parent, v)    #checks to see that x and y are not already connected by some other edges, checks no cycle
             # If including this edge does't cause cycle,
             # include it in result and increment the index
             # of result for next edge
             if x != y:
-                #print("no cycle")
                 e = e + 1
                 result.append([u, v, w])
-                #print("result: ", result)
                 self.union(parent, rank, x, y)
                 # Else discard the edge
 
-            #else:
-                #print("cycle found")
-        # print the contents of result[] to display the built MST
-        #print("Following are the edges in the constructed MST")
         return result
-        #for u, v, weight in result:
-            # print str(u) + " -- " + str(v) + " == " + str(weight)
-            #print("%d -- %d == %d" % (u, v, weight))
 
 
 class Heap():
@@ -289,7 +283,6 @@ class Heap():
 def printArr(parent, n):
     result = []
     for i in range(1, n):
-        #print("% d - % d" % (parent[i], i))
         result.append((parent[i], i))
     return result
 

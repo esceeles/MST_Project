@@ -45,9 +45,24 @@ def generateRandomConnectedGraph(self, V):
     return vertices, edges
 
 if __name__ == "__main__":
+
     nodes = 30000
-    edges = nodes * 5
-    file_name = "m_"+ str(nodes)+ "_n_" + str(edges)+"_e"
+    density = 1
+    edges = (density * (nodes**2 - nodes))/2
+    #print(density)
+    #print(edges)
+    edges = int(edges)
+    #print(edges)
+    #edges = nodes
+    #density equation for edges:
+    #edges = (density*(nodes**2 - nodes))/2
+
+    #1/10 is min
+    #1/2 is mid
+    #1 is complete
+    #2 is rediculous
+
+    file_name = "large_" + str(nodes) + "_density_" + str(density)
     f= open(str(file_name +".txt"),"w+")
 
     f.write(str(nodes) + '\n')
