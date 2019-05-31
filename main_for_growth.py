@@ -28,16 +28,16 @@ log_growth = []
 node_growth = []
 node_time = []
 min = 1000
-max = 10000
+max = 9500
 scale = 500
 
 f.write(str("nodes in range: " + str(min) + "-" + str(max)))
-
+density = 0.1
+f.write(str("\ndensity: " + str(density)))
+f.write('\n')
 for nodes in range(min, max, scale):
     print("nodes: ", nodes)
-    density = 0.1
-    f.write(str("density: " + str(density)))
-    f.write('\n')
+
     node_time.append(nodes)
     p, k, edges = multigraph(nodes, density)
 
