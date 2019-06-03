@@ -1,14 +1,14 @@
 import timeit
-from scipy.stats import ttest_ind, f_oneway, ttest_rel, normaltest
+from scipy.stats import ttest_ind
 import matplotlib.pyplot as plt
-from pylab import plot, show, ion, ioff, subplot, figure, savefig, subplots
+from pylab import savefig
 import math
 from randomGraph import multigraph
 import gc
 
 gc.disable()
 
-file_name = str("growth_over_node_growth")
+file_name = str("larger_denser_growth_over_node_growth")
 f = open(str(file_name + ".txt"), "w+")
 f.write(file_name)
 f.write('\n')
@@ -28,11 +28,11 @@ log_growth = []
 node_growth = []
 node_time = []
 min = 1000
-max = 9500
-scale = 500
+max = 4000
+scale = 100
 
 f.write(str("nodes in range: " + str(min) + "-" + str(max)))
-density = 0.1
+density = 0.5
 f.write(str("\ndensity: " + str(density)))
 f.write('\n')
 for nodes in range(min, max, scale):
@@ -133,6 +133,7 @@ f.close()
 all_time = []  ####time as nodes increase####
 all_time.append(list(krus_time))
 all_time.append(list(prim_time))
+#all_time.append(list(bor_time))
 
 fig, ax = plt.subplots()
 ax.stackplot(node_time, all_time, labels=["krus", "prim"])
@@ -140,7 +141,6 @@ ax.set_title('growth in time over nodes')
 ax.legend(loc='upper left')
 ax.set_ylabel('time')
 ax.set_xlabel('nodes')
-# ax.set_ylim(ymin= 900, ymax = 1100)
 fig.tight_layout()
 
 savefig(str(file_name + "_time_over_nodes.png"))

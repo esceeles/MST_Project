@@ -65,6 +65,7 @@ def multigraph(nodes, density):
     ex_edges = edges - (nodes-1)
 
     for i in range(ex_edges):             #adds 10 random edges to graph
+        print(i)
         u = random.randint(0, nodes-1)
         v = random.randint(0, nodes-1)
         w = random.randint(0, 1000)

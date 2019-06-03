@@ -46,12 +46,12 @@ def generateRandomConnectedGraph(self, V):
 if __name__ == "__main__":
 
     nodes = 10000               #choose nodes
-    density = .8                 #choose density rating
+    density = .5                 #choose density rating
     edges = (density * (nodes**2 - nodes))/2        #edges based on density rating
     edges = int(edges)                              #if not int, round down
 
     #writes to file with this naming convention
-    file_name = "med_" + str(nodes) + "_density_"+str(density)
+    file_name = "med_dense"
     f= open(str(file_name +".txt"),"w+")
 
     f.write(str(nodes) + '\n')                          #writes nodes and edges to file
